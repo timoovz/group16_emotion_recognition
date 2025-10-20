@@ -1,67 +1,60 @@
----
-noteId: "b53482e0ab5611f09d98196b7cfc3e97"
-tags: []
-
----
-
 # Detecting emotions with ML algorithms
-
 The goal of this code is to recognize facial expressions from laptop camera feed. It identifies the face, makes face pictures, extracts features from the images and uses a machine learning algorithm to classify the expression on the image.
 
-[IMPORTANT]: when
+To recompute all features, empty the `data/features/` folder first.
 
 ### Data preparation
-The images are 48x48 matrices with gray-scale values (0 black - 255 white).
-The labels for emotions are 'angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral'.
-
-The dataset comes from ...
-
-it is imbalanced, this is fixed by ...
-
-Data is augmented with:
-- color jitter
-- horizontal flips
-- rotating faces (?)
-- shifting faces (?)
-
-Determine invariants:
-- translation
-- rotation
-- lighting
-
+Images are 48x48 grayscale, and labels are angry, disgust, fear, happy, sad, surprise, and neutral.
+- Normalize pixel values from [0,255] to [0,1]  
+- Handle class imbalance by augmenting the smaller classes until all classes have the same number of samples  
+- Data is augmented with:
+  - translation  
+  - rotation  
+  - scaling  
+  - lighting changes  
+  - horizontal flip  
+- The model is made invariant to translation, rotation, lighting changes, and horizontal flipping  
+- Class weights are computed after augmentation, but not used because augmentation balances classes
 
 ### Feature engineering
-
-features extracted:
-- HOG features
-- landmarks
-- gradients
-- facial landmarks
-- histogram of oriented gradients
-- eigenfaces/eigen spaces
-- Haar-like features
-- pixel
-- local binary patterns
-- pixel intensity
-- Fourier transform (when is this good?)
-(for each feature, chosen because ... ; it models ...)
-
-These features are the inputs for the machine learning model. 
+- Extracted features:  
+  - HOG  
+  - LBP  
+  - GLCM (Haralick features)  
+  - DCT (low-frequency block)  
+  - Haar wavelet energies (multi-scale)  
+  - Hu moments  
+  - Zernike moments  
+- Features are stored under `data/features/train`, `data/features/validation`, and `data/features/test`  
+- Feature selection steps:  
+  - Variance threshold (remove features with almost no variation)  
+  - Fisher score (keep the most informative features)  
+  - Correlation pruning (for correlated features, keep the one with the highest mutual information)  
+- Optionally, scale features using StandardScaler (zero mean and unit variance)  
+- Latent representation built with PCA to reduce noise and dimensionality  
 
 ### Machine learning implementation
-Models used:
-- SVM (support vector machine)
-    - features used: ...
-- MLP
-- Random forest
-- Fuzzy system 
-    - suited for relativly low dimensions; so either use low dimensional features or implement dimensionality reduction
+- **SVM**  
+  - Features: HOG, LBP, DCT  
+  - Selection: variance threshold > Fisher score > correlation pruning  
+  - PCA to 20 components  
+  - Trained with GridSearchCV and Stratified K-Fold cross-validation  
+- **MLP**  
+  - Features: HOG, LBP, DCT, wavelet, Hu, Zernike  
+  - Selection: variance threshold > Fisher score > correlation pruning  
+  - PCA keeping 99% of the variance  
+  - Uses early stopping  
+- **Random Forest**  
+  - Features: LBP, wavelet, Hu  
+  - Selection: variance threshold > Fisher score > correlation pruning  
+  - PCA keeping 99% of the variance  
+  - Uses class weights to handle imbalance  
+- **Fuzzy system**  
+  - Features: wavelet, Hu  
+  - Selection: variance threshold > Fisher score > correlation pruning  
+  - No PCA (low-dimensional features)  
+- Evaluation metrics: accuracy, balanced accuracy, F1 score (macro), Cohen’s kappa, confusion matrix  
 
-
-The performance of <model> is 
-- accuracy
-- balanced accuracy
-- confusion matrix
 
 
 ### Images from laptop camera feed
